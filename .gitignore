@@ -1,0 +1,7 @@
+node_modules/
+.env
+build/
+*.sublime-workspace
+*.sublime-project
+.vscode/
+.idea/
