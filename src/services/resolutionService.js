@@ -1,35 +1,30 @@
-// resolutionService.js
+import {
+  collection, addDoc, getDocs, query, where, doc, updateDoc, serverTimestamp,
+} from 'firebase/firestore';
+import { db } from './firebaseConfig';
 
-class ResolutionService {
-    constructor() {
-        this.resolutions = [];
-    }
+export const createResolution = async ({ reportId, managerId, description, afterPhotoURLs }) => {
+  const ref = await addDoc(collection(db, 'resolutions'), {
+    reportId,
+    managerId,
+    description,
+    afterPhotoURLs: afterPhotoURLs || [],
+    resolvedAt: serverTimestamp(),
+  });
+  return ref.id;
+};
 
-    // Create a new resolution
-    create(resolution) {
-        this.resolutions.push(resolution);
-        return resolution;
-    }
+export const getResolutionByReportId = async (reportId) => {
+  const q = query(collection(db, 'resolutions'), where('reportId', '==', reportId));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, ...d.data() };
+};
 
-    // Read all resolutions
-    read() {
-        return this.resolutions;
-    }
-
-    // Update a resolution by ID
-    update(id, updatedResolution) {
-        const index = this.resolutions.findIndex(res => res.id === id);
-        if (index === -1) return null;
-        this.resolutions[index] = {...this.resolutions[index], ...updatedResolution};
-        return this.resolutions[index];
-    }
-
-    // Delete a resolution by ID
-    delete(id) {
-        const index = this.resolutions.findIndex(res => res.id === id);
-        if (index === -1) return null;
-        return this.resolutions.splice(index, 1)[0];
-    }
-}
-
-module.exports = new ResolutionService();
+export const updateResolution = async (id, data) => {
+  await updateDoc(doc(db, 'resolutions', id), {
+    ...data,
+    resolvedAt: serverTimestamp(),
+  });
+};

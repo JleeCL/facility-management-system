@@ -1,7 +1,1 @@
-import React from 'react';
-
-const UserFeedback = () => {
-    return <div>User Feedback Component</div>;
-};
-
-export default UserFeedback;
+// Replaced by full FMS component suite. See src/components/user/, manager/, admin/

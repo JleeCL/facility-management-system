@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users can read their own profile; admins can read all
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && isAdmin();
+      allow delete: if false;
+    }
+
+    // Reports
+    match /reports/{reportId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // Users can update/delete only their own pending reports; managers and admins can update any
+      allow update: if request.auth != null && (
+        (request.auth.uid == resource.data.userId && resource.data.status == 'pending') ||
+        isManager() || isAdmin()
+      );
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.userId || isAdmin()
+      );
+    }
+
+    // Resolutions — managers and admins only
+    match /resolutions/{resId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (isManager() || isAdmin());
+    }
+
+    // Status logs — read by all authenticated; write by managers and admins
+    match /statusLogs/{logId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (isManager() || isAdmin());
+    }
+
+    // Notifications — users read/write their own only; system creates via backend
+    match /notifications/{notifId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+    }
+
+    // Helper functions
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isManager() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'facility_manager';
+    }
+  }
+}
